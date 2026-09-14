@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Decision Wheel</title>
+<style>
+*{box-sizing:border-box}
+body{
+  margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;
+  background:#08090d;color:#fff;font-family:Inter,Arial,sans-serif;overflow:hidden
+}
+.app{width:min(92vw,430px);text-align:center}
+.kicker{font-size:10px;letter-spacing:4px;color:#777b89;font-weight:700}
+h1{margin:7px 0 18px;font-size:35px;letter-spacing:-1.5px}
+.result{
+  height:76px;border:1px solid #292c37;border-radius:18px;background:#11131a;
+  display:flex;align-items:center;justify-content:center;margin-bottom:22px;
+  box-shadow:inset 0 1px #ffffff0b,0 15px 40px #0008
+}
+#result{font-size:25px;font-weight:800;letter-spacing:5px;color:#777b89}
+.wheelbox{width:min(82vw,350px);aspect-ratio:1;margin:0 auto 28px;position:relative}
+.pointer{
+  position:absolute;z-index:20;top:-10px;left:50%;transform:translateX(-50%);
+  width:0;height:0;border-left:14px solid transparent;border-right:14px solid transparent;
+  border-top:28px solid #fff;filter:drop-shadow(0 3px 5px #000)
+}
+.wheel{
+  position:relative;width:100%;height:100%;border-radius:50%;overflow:hidden;
+  border:7px solid #20232d;
+  background:conic-gradient(from -22.5deg,
+    #7356ff 0 45deg,#15171e 45deg 90deg,
+    #7356ff 90deg 135deg,#15171e 135deg 180deg,
+    #7356ff 180deg 225deg,#15171e 225deg 270deg,
+    #7356ff 270deg 315deg,#15171e 315deg 360deg);
+  box-shadow:0 20px 55px #0009,inset 0 0 0 2px #ffffff12;
+  transition:transform 4.2s cubic-bezier(.12,.72,.12,1)
+}
+.wheel:before{
+  content:"";position:absolute;inset:11px;border-radius:50%;
+  border:1px solid #ffffff35;z-index:2;pointer-events:none
+}
+.label{
+  position:absolute;z-index:5;left:50%;top:50%;
+  width:65px;height:32px;margin-left:-32.5px;margin-top:-16px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:16px;font-weight:800;letter-spacing:2px;
+  text-shadow:0 2px 6px #0008
+}
+.center{
+  position:absolute;z-index:10;left:50%;top:50%;transform:translate(-50%,-50%);
+  width:64px;height:64px;border-radius:50%;background:#0b0c11;
+  border:5px solid #282b35;box-shadow:0 5px 20px #0009;
+  display:grid;place-items:center
+}
+.center span{width:8px;height:8px;border-radius:50%;background:#fff;box-shadow:0 0 15px #fff}
+button{
+  width:100%;height:59px;border:0;border-radius:17px;cursor:pointer;
+  background:linear-gradient(135deg,#7356ff,#5435db);color:#fff;
+  font-size:14px;font-weight:800;letter-spacing:4px;
+  box-shadow:0 12px 30px #6044ed55,inset 0 1px #ffffff35
+}
+button:active{transform:scale(.985)}
+button:disabled{opacity:.55;cursor:not-allowed}
+.note{font-size:10px;color:#656977;letter-spacing:1.5px;margin-top:12px}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="kicker">DECISION WHEEL</div>
+  <h1>YES or NO?</h1>
+
+  <div class="result"><div id="result">READY</div></div>
+
+  <div class="wheelbox">
+    <div class="pointer"></div>
+    <div class="wheel" id="wheel"></div>
+  </div>
+
+  <button id="start">START</button>
+  <div class="note">4 YES · 4 NO · EXACTLY 50 / 50</div>
+</div>
+
+<script>
+const wheel=document.getElementById('wheel');
+const result=document.getElementById('result');
+const start=document.getElementById('start');
+let rotation=0,busy=false;
+
+// Build all 8 labels mathematically so every YES and NO is visible.
+for(let i=0;i<8;i++){
+  const angle=i*45;
+  const rad=angle*Math.PI/180;
+  const x=50+37*Math.sin(rad);
+  const y=50-37*Math.cos(rad);
+  const el=document.createElement('div');
+  el.className='label';
+  el.textContent=(i%2===0)?'YES':'NO';
+  el.style.left=x+'%';
+  el.style.top=y+'%';
+  wheel.appendChild(el);
+}
+
+// 0° = top. YES slices are centered at 0,90,180,270.
+// NO slices are centered at 45,135,225,315.
+start.onclick=()=>{
+  if(busy)return;
+  busy=true;start.disabled=true;
+  result.textContent='DECIDING…';result.style.color='#777b89';
+
+  const random=new Uint8Array(1);
+  crypto.getRandomValues(random);
+  const yes=random[0]<128;
+
+  const target=yes ? 0 : 45;
+  const current=((rotation%360)+360)%360;
+  const desired=((360-target-current)%360);
+  rotation += 360*(5+Math.floor(Math.random()*3)) + desired;
+  wheel.style.transform='rotate('+rotation+'deg)';
+
+  setTimeout(()=>{
+    result.textContent=yes?'YES':'NO';
+    result.style.color=yes?'#9b88ff':'#fff';
+    result.animate(
+      [{transform:'scale(.72)',opacity:.2},{transform:'scale(1.12)',opacity:1},{transform:'scale(1)',opacity:1}],
+      {duration:500,easing:'cubic-bezier(.2,.8,.2,1)'}
+    );
+    start.disabled=false;busy=false;
+  },4300);
+};
+</script>
+</body>
+</html>
